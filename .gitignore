@@ -1,0 +1,60 @@
+# ==============================================
+# 🧠 Python + Flask + TensorFlow Projesi için .gitignore
+# ==============================================
+
+# Sanal ortam (çok büyük boyutlu, repo'ya dahil edilmez)
+venv/
+env/
+ENV/
+.venv/
+.python-version
+
+# IDE ayar klasörleri
+.vscode/
+.idea/
+
+# Python cache ve derleme çıktıları
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+build/
+dist/
+
+# TensorFlow / Keras model dosyaları
+*.h5
+*.keras
+*.ckpt
+*.ckpt.*
+*.pb
+*.tflite
+*.pth
+*.onnx
+
+# Notebook checkpoint'leri
+.ipynb_checkpoints/
+
+# Log ve geçici dosyalar
+*.log
+*.tmp
+*.bak
+*.swp
+.DS_Store
+
+# Ortam değişken dosyaları
+.env
+.env.*
+
+# HTML cache veya derleme çıktıları
+__pycache__/
+*.spec
+*.db
+
+# OS / Editor temporary files
+Thumbs.db
+desktop.ini
+
+
+app/model/
