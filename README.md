@@ -1,74 +1,84 @@
 # Snake Web App
 
-Bu proje, yılan görsellerini sınıflandırmak için geliştirilmiş yapay zekâ destekli bir web uygulamasıdır. Sistem, kullanıcıdan alınan bir yılan görselini derin öğrenme modeli ile analiz ederek en olası 3 tür tahminini üretir ve sonuçları web arayüzünde gösterir. Uygulama ayrıca yapılan tahminleri zaman damgası ile birlikte `results.xlsx` dosyasına kaydederek sonradan incelenebilir hale getirir.
+Bu proje, yılan görsellerini derin öğrenme tabanlı modeller ile sınıflandıran web tabanlı bir uygulamadır. Sistem, kullanıcı tarafından yüklenen bir görsel üzerinde birden fazla CNN modeli ile çıkarım yapar ve her model için en olası ilk 3 sınıf tahminini döndürür.
 
-## Proje Amacı
+Proje, bitirme çalışması kapsamında yalnızca bir tahmin arayüzü sunmayı değil; aynı zamanda çoklu model karşılaştırması, model servisleme ve web tabanlı dağıtım mantığını tek bir sistem altında toplamayı amaçlamaktadır.
 
-Bu bitirme projesinin amacı, derin öğrenme tabanlı bir görüntü sınıflandırma modelini kullanıcı dostu bir web arayüzü ile birleştirerek gerçek bir uygulama haline getirmektir. Proje kapsamında:
+## Overview
 
-- yılan türlerini sınıflandırabilen bir modelin web ortamına entegrasyonu,
-- kullanıcıdan görsel alma ve tahmin üretme,
-- tahmin sonuçlarını kayıt altına alma,
-- model başarımını raporlama ve görselleştirme
+Bu repository, TensorFlow SavedModel formatında saklanan birden fazla sınıflandırma modelinin Flask tabanlı bir web uygulaması içerisinde birlikte çalıştırılması için geliştirilmiştir.
 
-hedeflenmiştir.
+Sistem şu temel bileşenlerden oluşur:
 
-## Temel Özellikler
+- **Inference service**: Flask tabanlı backend
+- **Model serving layer**: TensorFlow SavedModel ile yüklenen çoklu model yapısı
+- **Frontend layer**: HTML, CSS ve JavaScript tabanlı kullanıcı arayüzü
+- **Analysis layer**: Model performansını incelemek için yardımcı scriptler ve raporlar
+- **Prediction comparison logic**: Aynı görsel için birden fazla model sonucunun aynı anda gösterilmesi
 
+## Key Features
+
+- Tek bir görsel üzerinde **birden fazla model ile tahmin**
+- TensorFlow **SavedModel** formatı ile model yükleme
 - Flask tabanlı web uygulaması
-- Eğitilmiş `ResNet50` modelinin kullanılması
-- Görsel yükleme ve önizleme desteği
-- En yüksek olasılığa sahip ilk 3 sınıfın tahmin edilmesi
-- Tahmin sonuçlarının `results.xlsx` dosyasına otomatik kaydedilmesi
-- Model performansını analiz etmek için ayrı değerlendirme scriptleri
-- Sınıf bazlı raporlar, confusion matrix ve başarım görselleri üretimi
+- Kullanıcıdan görsel yükleme desteği
+- Her model için ayrı ayrı **Top-3 prediction**
+- Sınıf isimlerini `class_names.json` üzerinden eşleme
+- Geliştirici dostu modüler yapı
+- Analiz ve raporlama klasörleri ile proje çıktılarının ayrıştırılması
 
-## Kullanılan Teknolojiler
+## Kullanılan Modeller
 
-- **Python**
-- **Flask**
-- **TensorFlow / Keras**
-- **NumPy**
-- **Pandas**
-- **Matplotlib**
-- **Seaborn**
-- **OpenPyXL**
-- **HTML / CSS / JavaScript**
+Projede üç farklı model kullanılmaktadır:
 
-## Proje Yapısı
+- **EfficientNetB7**
+- **ResNet50**
+- **MobileNet**
+
+Bu modeller uygulama başlatılırken yüklenir ve aynı görsel üzerinde bağımsız olarak çalıştırılır. Böylece aynı input için model bazlı tahmin farkları gözlemlenebilir.
+
+## Tech Stack
+
+### Backend
+- Python
+- Flask
+- TensorFlow / Keras
+- NumPy
+- PIL
+
+### Frontend
+- HTML
+- CSS
+- JavaScript
+
+### Analysis / Reporting
+- Python tabanlı analiz scriptleri
+- Excel tabanlı çıktı kayıtları
+- Görsel raporlama çıktıları
+
+## Project Structure
 
 ```bash
-snake_web_app/
+snake_web_app_aws/
 │
+├── Scripts/
+├── analysis/
 ├── app/
 │   ├── model/
-│   │   └── resnet50_full_model.h5
+│   │   ├── effb7_savedmodel/
+│   │   ├── mobilenet_savedmodel/
+│   │   └── resnet50_savedmodel/
+│   ├── static/
 │   ├── templates/
 │   │   └── index.html
-│   └── app.py
-│
-├── analysis/
-│   ├── model_performance_random.py
-│   └── visualize_performance.py
+│   ├── uploads/
+│   ├── app.py
+│   └── class_names.json
 │
 ├── reports/
-│   ├── accuracy_bar_chart.png
-│   ├── bottom15_f1_classes.png
-│   ├── classification_report_random.xlsx
-│   ├── confusion_matrix_random.png
-│   ├── misclassified_examples.xlsx
-│   └── top15_f1_classes.png
-│
-├── static/
-│   ├── style.css
-│   └── script.js
-│
-├── class_names.json
+├── uploads/
 ├── results.xlsx
-├── run.bat
-├── check_model_output.py
-├── create_class_names_fixed.py
-└── create_class_names_fixed_v2.py
+└── run.bat
 ```
 
 ## Sistem Mimarisi ve Çalışma Mantığı
@@ -77,14 +87,8 @@ Uygulamanın merkezinde Flask ile geliştirilmiş bir backend bulunmaktadır. Si
 
 Kullanıcı ana sayfadan bir yılan görseli yüklediğinde bu görsel uploads/ klasörüne kaydedilir. Ardından görsel 224x224 boyutuna getirilir, dizi formatına çevrilir ve modele gönderilir. Modelin ürettiği tahmin vektöründen en yüksek olasılığa sahip ilk 3 sınıf seçilir. Sonuçlar JSON formatında frontend’e döndürülür ve aynı zamanda Excel dosyasına kayıt edilir.
 
-## Model Bilgisi
 
-Projede kullanılan model dosyası:
 
-```bash
-app/model/resnet50_full_model.h5
-
-```
 Model, yılan türlerini sınıflandırmak üzere eğitilmiş bir görüntü sınıflandırma modelidir. Sınıf isimleri class_names.json dosyasında tutulmaktadır. Bu dosyada toplam 135 farklı sınıf bulunduğu görülmektedir.
 
 ## Tahmin Çıktısı
