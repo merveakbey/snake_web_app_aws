@@ -4,25 +4,25 @@ Bu proje, yılan görsellerini derin öğrenme tabanlı modeller ile sınıfland
 
 Proje, bitirme çalışması kapsamında yalnızca bir tahmin arayüzü sunmayı değil; aynı zamanda çoklu model karşılaştırması, model servisleme ve web tabanlı dağıtım mantığını tek bir sistem altında toplamayı amaçlamaktadır.
 
-## Overview
+## Genel Bakış
 
 Bu repository, TensorFlow SavedModel formatında saklanan birden fazla sınıflandırma modelinin Flask tabanlı bir web uygulaması içerisinde birlikte çalıştırılması için geliştirilmiştir.
 
 Sistem şu temel bileşenlerden oluşur:
 
-- **Inference service**: Flask tabanlı backend
-- **Model serving layer**: TensorFlow SavedModel ile yüklenen çoklu model yapısı
-- **Frontend layer**: HTML, CSS ve JavaScript tabanlı kullanıcı arayüzü
-- **Analysis layer**: Model performansını incelemek için yardımcı scriptler ve raporlar
-- **Prediction comparison logic**: Aynı görsel için birden fazla model sonucunun aynı anda gösterilmesi
+- **Tahmin Servisi:** Flask tabanlı backend
+- **Model Sunum Katmanı:** TensorFlow SavedModel ile yüklenen çoklu model yapısı
+- **Arayüz Katmanı:** HTML, CSS ve JavaScript tabanlı kullanıcı arayüzü
+- **Analiz Katmanı:** Model performansını incelemek için yardımcı scriptler ve raporlar
+- **Tahmin Karşılaştırma Mantığı:** Aynı görsel için birden fazla model sonucunun aynı anda gösterilmesi
 
-## Key Features
+## Temel Özellikler
 
-- Tek bir görsel üzerinde **birden fazla model ile tahmin**
-- TensorFlow **SavedModel** formatı ile model yükleme
+- Tek bir görsel üzerinde birden fazla model ile tahmin
+- TensorFlow SavedModel formatı ile model yükleme
 - Flask tabanlı web uygulaması
 - Kullanıcıdan görsel yükleme desteği
-- Her model için ayrı ayrı **Top-3 prediction**
+- Her model için ayrı ayrı Top-3 tahmin üretimi
 - Sınıf isimlerini `class_names.json` üzerinden eşleme
 - Geliştirici dostu modüler yapı
 - Analiz ve raporlama klasörleri ile proje çıktılarının ayrıştırılması
@@ -31,13 +31,13 @@ Sistem şu temel bileşenlerden oluşur:
 
 Projede üç farklı model kullanılmaktadır:
 
-- **EfficientNetB7**
-- **ResNet50**
-- **MobileNet**
+- EfficientNetB7
+- ResNet50
+- MobileNet
 
-Bu modeller uygulama başlatılırken yüklenir ve aynı görsel üzerinde bağımsız olarak çalıştırılır. Böylece aynı input için model bazlı tahmin farkları gözlemlenebilir.
+Bu modeller uygulama başlatılırken yüklenir ve aynı görsel üzerinde bağımsız olarak çalıştırılır. Böylece aynı giriş verisi için model bazlı tahmin farkları gözlemlenebilir.
 
-## Tech Stack
+## Kullanılan Teknolojiler
 
 ### Backend
 - Python
@@ -46,17 +46,17 @@ Bu modeller uygulama başlatılırken yüklenir ve aynı görsel üzerinde bağ�
 - NumPy
 - PIL
 
-### Frontend
+### Arayüz
 - HTML
 - CSS
 - JavaScript
 
-### Analysis / Reporting
+### Analiz ve Raporlama
 - Python tabanlı analiz scriptleri
 - Excel tabanlı çıktı kayıtları
 - Görsel raporlama çıktıları
 
-## Project Structure
+## Proje Yapısı
 
 ```bash
 snake_web_app_aws/
@@ -227,3 +227,6 @@ Dataset klasör yapısı ile CSV içeriğini eşleştirerek Flask uygulamasında
 ## Sonuç
 
 Snake Web App, derin öğrenme tabanlı görüntü sınıflandırma modelinin gerçek bir web uygulamasına dönüştürüldüğü bütüncül bir bitirme projesidir. Proje; veri işleme, model entegrasyonu, web geliştirme, sonuç kaydı ve performans analizi gibi birden fazla süreci tek sistem altında bir araya getirmektedir. Bu yönüyle hem teknik hem de uygulamalı açıdan kapsamlı bir çalışma ortaya koymaktadır.
+
+## GELİŞTİRİCİ
+**Merve Akbey**
