@@ -228,5 +228,5 @@ Dataset klasör yapısı ile CSV içeriğini eşleştirerek Flask uygulamasında
 
 Snake Web App, derin öğrenme tabanlı görüntü sınıflandırma modelinin gerçek bir web uygulamasına dönüştürüldüğü bütüncül bir bitirme projesidir. Proje; veri işleme, model entegrasyonu, web geliştirme, sonuç kaydı ve performans analizi gibi birden fazla süreci tek sistem altında bir araya getirmektedir. Bu yönüyle hem teknik hem de uygulamalı açıdan kapsamlı bir çalışma ortaya koymaktadır.
 
-## GELİŞTİRİCİ
+## Geliştirici
 **Merve Akbey**
