@@ -4,60 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🐍 Snake Species Classifier</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0c1117;
-      color: #fff;
-      text-align: center;
-      padding: 40px;
-    }
-    h1 {
-      color: #00e676;
-      margin-bottom: 10px;
-    }
-    .upload-box {
-      background: #161b22;
-      border: 2px dashed #00e676;
-      border-radius: 15px;
-      padding: 30px;
-      width: 400px;
-      margin: 0 auto;
-    }
-    input[type="file"] {
-      margin-top: 15px;
-      cursor: pointer;
-    }
-    #preview {
-      margin-top: 20px;
-      max-width: 300px;
-      border-radius: 12px;
-      display: none;
-    }
-    #results {
-      margin-top: 30px;
-      display: none;
-    }
-    table {
-      margin: 0 auto;
-      border-collapse: collapse;
-      margin-top: 15px;
-      width: 400px;
-    }
-    th, td {
-      border: 1px solid #2d333b;
-      padding: 10px;
-    }
-    th {
-      background-color: #00e676;
-      color: #000;
-    }
-    canvas {
-      margin-top: 20px;
-      max-width: 400px;
-    }
-  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
@@ -65,116 +15,16 @@
   <p>Bir yılan görseli yükle ve modelin tahminini gör!</p>
 
   <div class="upload-box">
-    <form id="upload-form">
-      <input type="file" id="file-input" accept="image/*" required>
-      <br><br>
-      <button type="submit">Tahmin Et</button>
-    </form>
+    <input type="file" id="fileInput" accept="image/*">
+    <br><br>
+    <button onclick="predict()">Tahmin Et</button>
   </div>
 
-  <img id="preview" src="#" alt="Yüklenen Görsel">
+  <div id="result"></div>
 
-  <div id="results">
-    <h2>🔎 Tahmin Sonuçları</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Tür Adı</th>
-          <th>Olasılık</th>
-        </tr>
-      </thead>
-      <tbody id="result-table"></tbody>
-    </table>
-    <canvas id="probChart"></canvas>
-  </div>
+  <!-- 🔥 Akordiyon alanı -->
+  <div id="accordionArea" style="margin-top: 30px;"></div>
 
-  <script>
-  const form = document.getElementById('upload-form');
-  const fileInput = document.getElementById('file-input');
-  const preview = document.getElementById('preview');
-  const resultsDiv = document.getElementById('results');
-  const tableBody = document.getElementById('result-table');
-  let chartInstance;
-
-  // 📸 Görsel önizleme
-  fileInput.addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        preview.src = ev.target.result;
-        preview.style.display = 'block';
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-
-  // 🧠 Tahmin isteği gönder
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-    const file = fileInput.files[0];
-    if (!file) return alert("Lütfen bir görsel seçin.");
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    resultsDiv.style.display = 'none';
-    tableBody.innerHTML = '';
-    if (chartInstance) chartInstance.destroy();
-
-    try {
-      const res = await fetch("/predict", { method: "POST", body: formData });
-      const data = await res.json();
-
-      if (data.error) throw new Error(data.error);
-
-      // 📊 Yeni JSON yapısına göre tabloyu doldur
-      data.top3.forEach(item => {
-        const row = `<tr>
-          <td>${item.rank}</td>
-          <td>${item.label}</td>
-          <td>${item.prob.toFixed(2)}%</td>
-        </tr>`;
-        tableBody.innerHTML += row;
-      });
-
-      // 🎨 Chart.js grafik oluştur
-      const ctx = document.getElementById('probChart').getContext('2d');
-      const labels = data.top3.map(item => item.label);
-      const probs = data.top3.map(item => item.prob);
-
-      chartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Olasılık (%)',
-            data: probs,
-            backgroundColor: ['#00e676', '#80ffb0', '#ccffd9']
-          }]
-        },
-        options: {
-          scales: {
-            y: { beginAtZero: true, max: 100 }
-          },
-          plugins: {
-            legend: { labels: { color: '#fff' } },
-            tooltip: {
-              callbacks: {
-                label: context => `${context.raw.toFixed(2)}%`
-              }
-            }
-          }
-        }
-      });
-
-      resultsDiv.style.display = 'block';
-    } catch (err) {
-      alert("Bir hata oluştu: " + err.message);
-    }
-  });
-</script>
-
+<script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

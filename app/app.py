@@ -1,130 +1,176 @@
+from PIL import Image
 from flask import Flask, render_template, request, jsonify
+from tensorflow.keras.applications.resnet50 import preprocess_input as resnet_pre
+from tensorflow.keras.applications.efficientnet import preprocess_input as eff_pre
+from tensorflow.keras.applications.mobilenet_v3 import preprocess_input as mob_pre
+
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
-import tensorflow as tf
 import numpy as np
 import os, json
-import pandas as pd
-from datetime import datetime
+import tensorflow as tf
+import operator
+from keras.layers import Lambda
 
-# =====================================================
-# 🔹 Flask Uygulaması Başlat
-# =====================================================
-app = Flask(__name__)
 
-# =====================================================
-# 🔹 Model ve Sınıf İsimlerini Yükle
-# =====================================================
-MODEL_PATH = "app/model/resnet50_full_model.h5"
-CLASS_NAMES_PATH = "class_names.json"
+def run_model(model_fn, img_array):
+    pred = model_fn(tf.constant(img_array))["predictions"].numpy()[0]
 
-print("📦 Model ve sınıf isimleri yükleniyor...")
-model = load_model(MODEL_PATH)
-print("✅ ResNet50 modeli başarıyla yüklendi!")
+    print("\n--- RAW OUTPUT (logits?) ---")
+    print(pred[:10])
+    print("max:", np.max(pred))
+
+    probs = tf.nn.softmax(pred).numpy()
+    
+    print("--- SOFTMAX OUTPUT ---")
+    print(probs[:10])
+    print("sum:", np.sum(probs), "\n")
+
+    return probs
+
+
+
+def slicing(x, start=None, stop=None, step=None):
+    return x[start:stop:step]
+
+custom_objs = {
+    "SlicingOpLambda": Lambda,
+    "TFOpLambda": Lambda,
+    "__operators__.getitem": operator.getitem,
+    "getitem": operator.getitem,
+    "slicing": slicing,
+    "Ellipsis": Ellipsis
+}
+
+
+
+
+app = Flask(__name__, static_folder="static", template_folder="templates")
+
+
+
+MODEL_EFF    = "app/model/effb7_savedmodel"
+MODEL_RESNET = "app/model/resnet50_savedmodel"
+MODEL_MOB    = "app/model/mobilenet_savedmodel"
+CLASS_NAMES_PATH = "app/class_names.json"
+
+print("📦 Modeller yükleniyor...")
+
+
+eff_model = tf.saved_model.load(MODEL_EFF)
+eff_fn = eff_model.signatures["serving_default"]
+
+
+resnet_model = tf.saved_model.load(MODEL_RESNET)
+resnet_fn = resnet_model.signatures["serving_default"]
+
+
+mobilenet_model = tf.saved_model.load(MODEL_MOB)
+mobilenet_fn = mobilenet_model.signatures["serving_default"]
+
+
+print("✔ Tüm modeller yüklendi!")
+
+
+def run_model(fn, img_array):
+    out = fn(tf.constant(img_array))
+
+    
+    if isinstance(out, dict):
+        out = list(out.values())[0]  
+
+    
+    return out.numpy()[0]
+
+
 
 with open(CLASS_NAMES_PATH, "r", encoding="utf-8") as f:
     class_names = json.load(f)
 
-# =====================================================
-# 🔹 Ana Sayfa
-# =====================================================
+
+
+def get_top3(model, img_array):
+    preds = model.predict(img_array, verbose=0)[0]
+    top3 = np.argsort(preds)[-3:][::-1]
+    labels = [class_names[str(i)] for i in top3]
+    probs = [float(preds[i]) * 100 for i in top3]
+    return [
+        {"rank": i + 1, "label": labels[i], "prob": round(probs[i], 2)}
+        for i in range(3)
+    ]
+
+
 @app.route("/")
 def home():
     return render_template("index.html")
 
-# =====================================================
-# 🔹 Tahmin (Model Prediction)
-# =====================================================
+
+
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
         file = request.files.get("file")
         if not file:
-            return jsonify({"error": "Görsel dosyası alınamadı"}), 400
+            return jsonify({"error": "Görsel alınamadı"}), 400
 
-        # Görselleri uploads klasörüne kaydet
         os.makedirs("uploads", exist_ok=True)
         file_path = os.path.join("uploads", file.filename)
         file.save(file_path)
 
-        # Görseli yükle ve modele hazırla
-        img = image.load_img(file_path, target_size=(224, 224))
-        img_array = image.img_to_array(img)
-        img_array = np.expand_dims(img_array, axis=0)
-        img_array = img_array.astype("float32")  # normalize etmeden veriyoruz
+       
+        img = Image.open(file_path).convert("RGB")
+        img = img.resize((224, 224))
+        img_array = np.array(img)
 
-        # ✅ Model zaten preprocess_input içeriyor
-        preds = model.predict(img_array, verbose=0)[0]
+        
+        img_np = img_array.astype("float32")
 
-        # En yüksek 3 olasılığı al
-        top3 = np.argsort(preds)[-3:][::-1]
+       
+        img_eff = eff_pre(img_np.copy())      
+        img_res = resnet_pre(img_np.copy())   
+        img_mob = mob_pre(img_np.copy())      
 
-        # class_names dict mi list mi kontrol et
-        if isinstance(class_names, dict):
-            top3_labels = [class_names[str(i)] for i in top3]
-        else:
-            top3_labels = [class_names[i] for i in top3]
+        
+        img_eff = np.expand_dims(img_eff, axis=0)
+        img_res = np.expand_dims(img_res, axis=0)
+        img_mob = np.expand_dims(img_mob, axis=0)
 
-        top3_probs = [float(preds[i]) for i in top3]
 
-        # JSON formatında sonucu oluştur
-        result = {
-            "top3": [
-                {"rank": i + 1, "label": top3_labels[i], "prob": round(top3_probs[i] * 100, 2)}
+
+     
+        eff = run_model(eff_fn, img_eff)
+        res = run_model(resnet_fn, img_res)
+        mob = run_model(mobilenet_fn, img_mob)
+
+
+
+       
+        def get_top3(pred):
+            idx = pred.argsort()[-3:][::-1]
+            return [
+                {
+                     "rank": i + 1,
+                     "label": class_names[str(idx[i])],
+                     "prob": float(pred[idx[i]] * 100)
+                }
                 for i in range(3)
-            ]
+           ]
+
+
+
+        response = {
+            "effb7": {"top3": get_top3(eff)},
+            "resnet": {"top3": get_top3(res)},
+            "mobilenet": {"top3": get_top3(mob)}
         }
 
-               # =====================================================
-        # 📊 Tahmin Sonuçlarını Excel Dosyasına Kaydet
-        # =====================================================
-        try:
-            excel_path = "results.xlsx"
-
-            # Eğer dosya mevcut değilse veya boşsa yeni oluştur
-            if not os.path.exists(excel_path) or os.path.getsize(excel_path) == 0:
-                df = pd.DataFrame(columns=[
-                    "timestamp", "filename",
-                    "top1_label", "top1_prob",
-                    "top2_label", "top2_prob",
-                    "top3_label", "top3_prob"
-                ])
-            else:
-                # Engine belirtmek önemli: openpyxl
-                df = pd.read_excel(excel_path, engine="openpyxl")
-
-            # Yeni satır
-            new_row = {
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "filename": file.filename,
-                "top1_label": top3_labels[0],
-                "top1_prob": round(top3_probs[0] * 100, 2),
-                "top2_label": top3_labels[1],
-                "top2_prob": round(top3_probs[1] * 100, 2),
-                "top3_label": top3_labels[2],
-                "top3_prob": round(top3_probs[2] * 100, 2)
-            }
-
-            # DataFrame'e ekle ve kaydet
-            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-            df.to_excel(excel_path, index=False, engine="openpyxl")
-            print(f"📁 Tahmin Excel'e kaydedildi: {excel_path}")
-
-        except Exception as excel_error:
-            print("⚠️ Excel kayıt hatası:", excel_error)
-
-
-        # JSON sonucu frontend’e döndür
-        return jsonify(result)
+        return jsonify(response)
 
     except Exception as e:
         print("❌ Tahmin hatası:", e)
         return jsonify({"error": str(e)}), 500
 
 
-# =====================================================
-# 🔹 Uygulama Başlat
-# =====================================================
 if __name__ == "__main__":
-    print("🚀 Flask sunucusu başlatılıyor...")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    print("🚀 Sunucu çalışıyor...")
+    app.run(host="0.0.0.0", port=5000)

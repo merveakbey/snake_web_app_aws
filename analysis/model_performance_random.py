@@ -11,7 +11,7 @@ from sklearn.metrics import confusion_matrix, classification_report, top_k_accur
 # 1️⃣ Model ve Dataset Yükleme
 # ==========================
 MODEL_PATH = "app/model/resnet50_full_model.h5"
-DATASET_PATH = "c:/Users/user/Desktop/bitirme/dataset/test_random"
+DATASET_PATH = "c:/Users/user/Desktop/bitirme/dataset/test"
 IMG_SIZE = (224, 224)
 BATCH_SIZE = 16
 
